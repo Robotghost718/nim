@@ -1,10 +1,19 @@
-import GhostContentAPI from '@tryghost/content-api'
+let GhostContentAPI: any = null
 
-let ghostAPI: InstanceType<typeof GhostContentAPI> | null = null
+async function loadGhostAPI() {
+  if (!GhostContentAPI) {
+    const module = await import('@tryghost/content-api')
+    GhostContentAPI = module.default
+  }
+  return GhostContentAPI
+}
 
-function getGhostAPI() {
+let ghostAPI: any = null
+
+async function getGhostAPI() {
   if (!ghostAPI && process.env.NEXT_PUBLIC_GHOST_URL && process.env.NEXT_PUBLIC_GHOST_CONTENT_KEY) {
-    ghostAPI = new GhostContentAPI({
+    const API = await loadGhostAPI()
+    ghostAPI = new API({
       url: process.env.NEXT_PUBLIC_GHOST_URL,
       key: process.env.NEXT_PUBLIC_GHOST_CONTENT_KEY,
       version: 'v5.0',
@@ -27,7 +36,7 @@ export type GhostPost = {
 
 export async function getGhostPosts(): Promise<GhostPost[]> {
   try {
-    const api = getGhostAPI()
+    const api = await getGhostAPI()
     if (!api) {
       console.warn('Ghost API not configured')
       return []
@@ -57,7 +66,7 @@ export async function getGhostPosts(): Promise<GhostPost[]> {
 
 export async function getGhostPostBySlug(slug: string): Promise<GhostPost | null> {
   try {
-    const api = getGhostAPI()
+    const api = await getGhostAPI()
     if (!api) {
       console.warn('Ghost API not configured')
       return null
